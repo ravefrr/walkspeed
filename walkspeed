@@ -1,0 +1,111 @@
+ExtrasLockSec:AddButton({
+	Name = "Walkspeed",
+	Callback = function()
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+        local UIS = game:GetService("UserInputService")
+        
+        local WalkSpeed = {
+            On = 150,
+            Off = 16
+        }
+        
+        local WalkSpeedToggle = false
+        local UIName = "WalkSpeedGui"
+        
+        local function UpdateWalkSpeed()
+            local Character = LocalPlayer.Character
+            if Character then
+                local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+                if Humanoid then
+                    Humanoid.WalkSpeed = WalkSpeed[WalkSpeedToggle and "On" or "Off"]
+                end
+            end
+        end
+        
+        local function ToggleWalkSpeed()
+            WalkSpeedToggle = not WalkSpeedToggle
+            UpdateWalkSpeed()
+        end
+        
+        -- Create or update UI
+        local function CreateOrUpdateUI()
+            local oldUI = LocalPlayer.PlayerGui:FindFirstChild(UIName)
+            if oldUI then
+                oldUI:Destroy()
+            end
+            
+            local ScreenGui = Instance.new("ScreenGui")
+            ScreenGui.Parent = LocalPlayer.PlayerGui
+            ScreenGui.Name = UIName
+        
+            local Frame = Instance.new("Frame")
+            Frame.Size = UDim2.new(0, 200, 0, 50)
+            Frame.Position = UDim2.new(0.5, -100, 0.5, -25)
+            Frame.AnchorPoint = Vector2.new(0.5, 0.5)
+            Frame.BackgroundColor3 = Color3.new(0, 0, 0)
+            Frame.BackgroundTransparency = 0.5
+            Frame.Parent = ScreenGui
+        
+            local ToggleButton = Instance.new("TextButton")
+            ToggleButton.Size = UDim2.new(0.5, 0, 1, 0)
+            ToggleButton.Position = UDim2.new(0, 0, 0, 0)
+            ToggleButton.Text = "Toggle WalkSpeed"
+            ToggleButton.Parent = Frame
+        
+            ToggleButton.MouseButton1Click:Connect(function()
+                ToggleWalkSpeed()
+            end)
+        
+            UpdateWalkSpeed()
+        
+            -- Draggable UI
+            local dragging
+            local dragInput
+            local dragStart
+            local startPos
+        
+            Frame.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = true
+                    dragStart = input.Position
+                    startPos = Frame.Position
+        
+                    input.Changed:Connect(function()
+                        if input.UserInputState == Enum.UserInputState.End then
+                            dragging = false
+                        end
+                    end)
+                end
+            end)
+        
+            Frame.InputChanged:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseMovement then
+                    dragInput = input
+                end
+            end)
+        
+            UIS.InputChanged:Connect(function(input)
+                if input == dragInput and dragging then
+                    local delta = input.Position - dragStart
+                    Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+                end
+            end)
+        end
+        
+        CreateOrUpdateUI()
+        
+        -- Listen for character added
+        LocalPlayer.CharacterAdded:Connect(function(character)
+            UpdateWalkSpeed()
+        end)
+        
+        -- Listen for changes in walk speed
+        LocalPlayer.Character.Humanoid.Changed:Connect(function(property)
+            if property == "WalkSpeed" then
+                UpdateWalkSpeed()
+            end
+        end)
+        
+    end
+})
